@@ -10,13 +10,13 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 
 
-from .serializers import SignatureSerialzier, AccessTokenSerializer, \
-    UnifiedOrderSerialzier, OrderQuerySerializer
-from .models import JsApiTicket, Order, AccessToken
+from .serializers import OrderSerialzier, QuerySerializer
+from .models import Order
+
 from .utils import nonce_str as generate_nonce_str
 from .utils import sign as sign_func
 
-from .config import APP_ID, MCH_ID, NOTIFY_URL, SIGN_KEY, ORDER_URL
+from .config import APP_ID, MCH_ID, NOTIFY_URL, SIGN_KEY, UNIFIED_ORDER_URL, ORDER_QUERY_URL
 
 import time
 import hashlib
@@ -33,7 +33,6 @@ class OrderView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = self.request.user
         busname = serializer.validated_data.get("busname")
         description = serializer.validated_data.get("description")
         total_fee = serializer.validated_data.get("total_fee")
@@ -51,7 +50,6 @@ class OrderView(GenericAPIView):
             spbill_create_ip = request.META['REMOTE_ADDR']
 
         instance = Order.objects.create(
-            owner=user,
             busname=busname,
             description=description,
             total_fee=total_fee,
@@ -76,7 +74,7 @@ class OrderView(GenericAPIView):
         payload["sign"] = sign
 
         req_xml = dicttoxml.dicttoxml(payload, custom_root="xml")
-        url = ORDER_URL
+        url = UNIFIED_ORDER_URL
 
         res_xml = requests.post(url, req_xml, verify=False)
         res_xml.encoding = 'utf8'
@@ -165,7 +163,7 @@ class PayNotifyView(View):
 
 
 class OrderQueryView(GenericAPIView):
-    serializer_class = OrderQuerySerializer
+    serializer_class = QuerySerializer
     permission_classes = (permissions.AllowAny, )
 
     def post(self, request, *args, **kwargs):
@@ -191,7 +189,7 @@ class OrderQueryView(GenericAPIView):
         sign = sign_func(payload, SIGN_KEY)
         payload["sign"] = sign
         req_xml = dicttoxml.dicttoxml(payload, custom_root="xml")
-        url = QUERY_URL
+        url = ORDER_QUERY_URL
         res_xml = requests.post(url, req_xml, verify=False)
         res_xml.encoding = 'utf8'
         res_xml = req_xml.text
