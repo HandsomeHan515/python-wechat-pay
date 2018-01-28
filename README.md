@@ -1,6 +1,8 @@
 # django-wechat-pay
 Use Django, Django-rest-framework to achieve wechat payment.
 
+微信支付、服务器异步通知、订单查询、退款
+
 ## 统一下单
 
 ### 应用场景
